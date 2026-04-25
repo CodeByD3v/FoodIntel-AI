@@ -1,5 +1,25 @@
-# virtual enviornment
+# virtual environment
 food_venv/
 
-# datasets
-datasets/
+# generated model artifacts and outputs
+outputs/
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+
+# Jupyter Notebook checkpoints
+.ipynb_checkpoints/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
