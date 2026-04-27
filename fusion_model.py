@@ -219,9 +219,21 @@ class FoodIntelFNN(nn.Module):
         self.constraint_injector: Optional[NLPConstraintInjector] = None
         if use_constraint:
             self.constraint_injector = NLPConstraintInjector(fusion_dim=fusion_dim)
-        self.nutrition_head = NutritionRegressionHead(fusion_dim, NUM_NUTRITION_TARGETS)
-        self.risk_head = HealthRiskClassificationHead(fusion_dim, NUM_RISK_CLASSES)
-        self.diet_head = DietaryCompatibilityHead(fusion_dim, NUM_DIET_TAGS)
+        self.nutrition_head = NutritionRegressionHead(
+            fusion_dim,
+            NUM_NUTRITION_TARGETS,
+            dropout=dropout,
+        )
+        self.risk_head = HealthRiskClassificationHead(
+            fusion_dim,
+            NUM_RISK_CLASSES,
+            dropout=dropout,
+        )
+        self.diet_head = DietaryCompatibilityHead(
+            fusion_dim,
+            NUM_DIET_TAGS,
+            dropout=dropout,
+        )
 
     def forward(
         self,
