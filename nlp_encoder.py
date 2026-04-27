@@ -55,7 +55,7 @@ class NLPConstraintVector(nn.Module):
 
     def forward(self, token_hidden: torch.Tensor, attention_mask: torch.Tensor) -> torch.Tensor:
         scores = self.token_attention(token_hidden).squeeze(-1)
-        scores = scores.masked_fill(attention_mask == 0, torch.info(scores.dtype).min)
+        scores = scores.masked_fill(attention_mask == 0, torch.finfo(scores.dtype).min)
         weights = torch.softmax(scores, dim=-1)
 
         k = min(self.n_cols, token_hidden.size(1))
