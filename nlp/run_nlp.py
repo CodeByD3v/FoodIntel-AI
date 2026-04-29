@@ -21,6 +21,7 @@ import torch
 from tqdm.auto import tqdm
 
 from nlp_encoder import BERT_MODEL, MAX_SEQ, FoodNLPProcessor
+from data_cleaning import FoodTextCleaner, clean_ingredient_text
 
 
 DEFAULT_INPUTS = ("datasets/first_part.csv", "datasets/second_part.csv")
@@ -46,6 +47,8 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--id-column", default="Unnamed: 0", help="Stable row id column.")
     parser.add_argument("--no-amp", action="store_true", help="Disable CUDA mixed precision.")
     parser.add_argument("--overwrite", action="store_true", help="Replace an existing output directory.")
+    parser.add_argument("--cleaning-mode", default="light", choices=["none", "light", "medium", "heavy"],
+                        help="Text cleaning mode: none (no cleaning), light (minimal), medium (moderate), heavy (aggressive)")
     return parser.parse_args()
 
 
@@ -112,7 +115,16 @@ def process_file(
 
         for chunk in tqdm(reader, desc=csv_path.name, unit="chunk"):
             text_column = resolve_text_column(chunk, args.text_column)
-            texts = [ingredients_to_text(value) for value in chunk[text_column].tolist()]
+            
+            # Apply data cleaning based on mode
+            if args.cleaning_mode != "none":
+                texts = [
+                    clean_ingredient_text(ingredients_to_text(value), mode=args.cleaning_mode)
+                    for value in chunk[text_column].tolist()
+                ]
+            else:
+                texts = [ingredients_to_text(value) for value in chunk[text_column].tolist()]
+            
             titles = (
                 chunk[args.title_column].fillna("").astype(str).tolist()
                 if args.title_column in chunk.columns
