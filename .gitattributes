@@ -4,3 +4,4 @@ datasets/USDA/** filter=lfs diff=lfs merge=lfs -text
 *.pth filter=lfs diff=lfs merge=lfs -text
 checkpoints/*.pth filter=lfs diff=lfs merge=lfs -text
 checkpoints/*.png filter=lfs diff=lfs merge=lfs -text
+datasets/*.csv filter=lfs diff=lfs merge=lfs -text
