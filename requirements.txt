@@ -1,4 +1,11 @@
-# Core Deep Learning
+# ============================================================================
+# Food Intelligence System - Requirements
+# ============================================================================
+# Multimodal AI Pipeline for Nutritional Analysis
+# Modules: CNN (Image), NLP (Text), GNN (Knowledge Graph), Fusion
+# ============================================================================
+
+# Core Deep Learning Frameworks
 torch==2.6.0
 torchvision==0.21.0
 torchaudio==2.6.0
@@ -8,40 +15,75 @@ transformers==5.6.2
 tokenizers==0.22.2
 safetensors==0.7.0
 
-# Data Processing
+# Data Processing & Scientific Computing
 numpy==2.4.3
 pandas==3.0.2
 scipy==1.17.1
 scikit-learn==1.8.0
 
-# Visualization (use 3.9.0 to avoid Windows DLL issues)
+# Visualization (matplotlib 3.9.0 recommended to avoid Windows DLL issues)
 matplotlib==3.9.0
 seaborn==0.13.2
 
-# Jupyter & Interactive
+# Computer Vision
+opencv-python>=4.7.0
+pillow==12.1.1
+
+# Jupyter & Interactive Development
 ipykernel==7.2.0
 ipython==9.13.0
 jupyter_client==8.8.0
 jupyter_core==5.9.1
 
-# Progress & Utilities
+# Progress Bars & CLI Utilities
 tqdm==4.67.3
-pyyaml==6.0.3
-pillow==12.1.1
+click==8.3.3
+colorama==0.4.6
 
-# Hugging Face Hub
+# Configuration & Serialization
+pyyaml==6.0.3
+
+# Hugging Face Ecosystem
 huggingface_hub==1.12.0
 
-# System Utilities
+# System & File Utilities
 filelock==3.25.2
 packaging==26.2
 regex==2026.4.4
 certifi==2026.4.22
-click==8.3.3
-colorama==0.4.6
 fsspec==2026.2.0
 networkx==3.6.1
 joblib==1.5.3
 
-# Computer Vision Utilities
-opencv-python>=4.7.0
+# ============================================================================
+# Installation Instructions
+# ============================================================================
+# 
+# 1. Create virtual environment:
+#    python -m venv food_venv
+#
+# 2. Activate virtual environment:
+#    Windows: food_venv\Scripts\activate
+#    Linux/Mac: source food_venv/bin/activate
+#
+# 3. Install dependencies:
+#    pip install -r requirements.txt
+#
+# 4. For GPU support, ensure CUDA 12.4+ is installed
+#
+# ============================================================================
+# Module-Specific Notes
+# ============================================================================
+#
+# CNN Module (cnn/):
+#   - Requires: torch, torchvision, opencv-python, pillow
+#   - GPU recommended for training
+#
+# NLP Module (nlp/):
+#   - Requires: transformers, tokenizers, safetensors
+#   - BERT model downloads automatically (~440MB)
+#
+# FNN Module (fnn/):
+#   - Requires: All above dependencies for multimodal fusion
+#
+# ============================================================================
