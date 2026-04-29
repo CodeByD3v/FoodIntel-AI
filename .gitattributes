@@ -2,3 +2,5 @@ datasets/food-101/images/** filter=lfs diff=lfs merge=lfs -text
 datasets/Nutrient5k/imagery/** filter=lfs diff=lfs merge=lfs -text
 datasets/USDA/** filter=lfs diff=lfs merge=lfs -text
 *.pth filter=lfs diff=lfs merge=lfs -text
+checkpoints/*.pth filter=lfs diff=lfs merge=lfs -text
+checkpoints/*.png filter=lfs diff=lfs merge=lfs -text
