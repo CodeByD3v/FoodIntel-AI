@@ -6,54 +6,65 @@
 # ============================================================================
 
 # Core Deep Learning Frameworks
-torch==2.6.0
-torchvision==0.21.0
-torchaudio==2.6.0
+torch>=2.6.0
+torchvision>=0.21.0
+torchaudio>=2.6.0
 
 # NLP & Transformers
-transformers==5.6.2
-tokenizers==0.22.2
-safetensors==0.7.0
+transformers>=5.6.2
+tokenizers>=0.22.2
+safetensors>=0.7.0
+beautifulsoup4>=4.12.0
+emoji>=2.12.0
+contractions>=0.1.73
+nltk>=3.8.1
+textblob>=0.18.0
+spacy>=3.8.0
+rapidfuzz>=3.0.0
 
 # Data Processing & Scientific Computing
-numpy==2.4.3
-pandas==3.0.2
-scipy==1.17.1
-scikit-learn==1.8.0
+numpy>=2.4.3
+pandas>=3.0.2
+scipy>=1.17.1
+scikit-learn>=1.8.0
+pyarrow>=14.0.0
 
 # Visualization (matplotlib 3.9.0 recommended to avoid Windows DLL issues)
-matplotlib==3.9.0
-seaborn==0.13.2
+matplotlib>=3.9.0
+seaborn>=0.13.2
+umap-learn>=0.5.0
 
 # Computer Vision
 opencv-python>=4.7.0
-pillow==12.1.1
+pillow>=12.1.1
 
 # Jupyter & Interactive Development
-ipykernel==7.2.0
-ipython==9.13.0
-jupyter_client==8.8.0
-jupyter_core==5.9.1
+ipykernel>=7.2.0
+ipython>=9.13.0
+jupyter_client>=8.8.0
+jupyter_core>=5.9.1
 
 # Progress Bars & CLI Utilities
-tqdm==4.67.3
-click==8.3.3
-colorama==0.4.6
+tqdm>=4.67.3
+click>=8.3.3
+colorama>=0.4.6
+pytest>=8.0.0
 
 # Configuration & Serialization
-pyyaml==6.0.3
+pyyaml>=6.0.3
 
 # Hugging Face Ecosystem
-huggingface_hub==1.12.0
+huggingface_hub>=1.12.0
 
 # System & File Utilities
-filelock==3.25.2
-packaging==26.2
-regex==2026.4.4
-certifi==2026.4.22
-fsspec==2026.2.0
-networkx==3.6.1
-joblib==1.5.3
+filelock>=3.25.2
+packaging>=26.2
+regex>=2026.4.4
+certifi>=2026.4.22
+fsspec>=2026.2.0
+networkx>=3.6.1
+joblib>=1.5.3
+
 
 # ============================================================================
 # Installation Instructions
