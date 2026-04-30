@@ -23,7 +23,7 @@ from tqdm import tqdm
 
 sys.path.append(str(Path(__file__).parent))
 
-from data_cleaning import clean_ingredient_text
+from cleaner import IngredientCleaner
 from nlp_encoder import FoodNLPEncoder, resolve_device
 from ingredient_extractor import IngredientExtractor
 from kg_matcher import FoodKGMatcher, GraphBuilder
@@ -41,6 +41,7 @@ class NLPPipeline:
         self.device = resolve_device(device)
         self.use_bert = use_bert
         
+        self.cleaner = IngredientCleaner()
         self.extractor = IngredientExtractor()
         self.matcher = FoodKGMatcher()
         self.graph_builder = GraphBuilder(self.matcher)
@@ -80,7 +81,7 @@ class NLPPipeline:
             'disease_risks': {}
         }
 
-        cleaned_text = clean_ingredient_text(text, mode="light")
+        cleaned_text = self.cleaner.clean(text)
         result['cleaned_text'] = cleaned_text
         
         ingredients = self.extractor.extract(cleaned_text)
