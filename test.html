@@ -1,0 +1,1852 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Food Analysis Engine</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Geist+Mono:wght@400;500;700&display=swap');
+
+        :root {
+            --bg: #f0f0ed;
+            --panel-bg: #fafaf8;
+            --border: #d8d8d2;
+            --text-main: #2a2a28;
+            --text-dim: #909088;
+            --green: #2d7a2d;
+            --red: #b03030;
+            --yellow: #a07800;
+            --orange: #b85a20;
+            --purple: #7050b8;
+            --cyan: #2888a8;
+            --track-bg: #e4e4e0;
+            --white: #1a1a18;
+            --radius-sm: 6px;
+            --radius-md: 10px;
+            --radius-lg: 14px;
+            --panel-shadow: 0 10px 26px rgba(0,0,0,0.06);
+            --panel-shadow-hover: 0 16px 36px rgba(0,0,0,0.09);
+            --accent-soft: rgba(45,122,45,0.09);
+            --focus-ring: 0 0 0 2px rgba(45,122,45,0.18);
+        }
+
+        body.dark-mode {
+            --bg: #030303;
+            --panel-bg: #0a0a0a;
+            --border: #222222;
+            --text-main: #b8b8b8;
+            --text-dim: #666666;
+            --green: #3d9d3d;
+            --red: #b83c3c;
+            --yellow: #b39000;
+            --orange: #cc6b2a;
+            --purple: #8860cc;
+            --cyan: #3a9db8;
+            --track-bg: #1a1a1a;
+            --white: #e8e8e8;
+            --panel-shadow: 0 10px 26px rgba(0,0,0,0.42);
+            --panel-shadow-hover: 0 16px 36px rgba(0,0,0,0.55);
+            --accent-soft: rgba(61,157,61,0.14);
+            --focus-ring: 0 0 0 2px rgba(61,157,61,0.28);
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            background-color: var(--bg);
+            color: var(--text-main);
+            font-family: 'Geist Mono', 'JetBrains Mono', 'Fira Code', 'Courier New', Courier, monospace;
+            font-size: clamp(10px, 1.2vh, 12px);
+            line-height: 1.45;
+            height: 100vh;
+            width: 100vw;
+            overflow: hidden;
+            display: flex;
+            align-items: stretch;
+            transition: background-color 0.3s ease, color 0.3s ease;
+        }
+
+        .app-shell { display: flex; flex-direction: row; width: 100%; height: 100%; overflow: hidden; }
+
+        .sidebar-rail {
+            width: 44px;
+            flex-shrink: 0;
+            background: var(--panel-bg);
+            border-right: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 12px 0 12px;
+            gap: 6px;
+            z-index: 101;
+            transition: background-color 0.3s ease, border-color 0.3s ease;
+        }
+
+        .rail-btn {
+            width: 30px; height: 30px;
+            background: none; border: 1px solid transparent; border-radius: 5px;
+            color: var(--text-dim);
+            display: flex; align-items: center; justify-content: center;
+            cursor: pointer;
+            transition: color 0.2s cubic-bezier(0.4,0,0.2,1), border-color 0.2s cubic-bezier(0.4,0,0.2,1), background 0.2s cubic-bezier(0.4,0,0.2,1), transform 0.15s ease;
+            flex-shrink: 0;
+        }
+        .rail-btn:hover { color: var(--green); border-color: rgba(45,122,45,0.4); background: rgba(45,122,45,0.1); transform: scale(1.05); }
+        .rail-btn:active { transform: scale(0.95); }
+        .rail-btn.active { color: var(--green); border-color: rgba(45,122,45,0.5); background: rgba(45,122,45,0.15); }
+        .rail-divider { width: 20px; height: 1px; background: var(--border); margin: 4px 0; flex-shrink: 0; transition: background-color 0.3s ease; }
+        .rail-spacer { flex: 1; }
+
+        .dashboard {
+            flex: 1; min-width: 0;
+            display: flex; flex-direction: column;
+            gap: 1.5vh; height: 100%;
+            padding: 1.5vh 1.5vw 1.5vh 1.2vw;
+            overflow-x: hidden;
+            overflow-y: auto;
+            scrollbar-width: none;
+        }
+        .dashboard::-webkit-scrollbar { width: 0; height: 0; }
+
+        .panel {
+            background-color: var(--panel-bg);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-md);
+            padding: clamp(10px,1.5vh,18px) clamp(10px,1.5vw,18px);
+            display: flex; flex-direction: column;
+            min-height: 0;
+            box-shadow: var(--panel-shadow);
+            transition: background-color 0.3s ease, border-color 0.25s cubic-bezier(0.4,0,0.2,1), transform 0.25s cubic-bezier(0.4,0,0.2,1), box-shadow 0.25s cubic-bezier(0.4,0,0.2,1);
+        }
+        .panel.graph-panel { padding-bottom: clamp(10px,1.5vh,18px); }
+        .panel:hover { border-color: rgba(45,122,45,0.3); box-shadow: var(--panel-shadow-hover); transform: translateY(-2px); }
+
+        .text-green { color: var(--green); }
+        .text-red { color: var(--red); }
+        .text-yellow { color: var(--yellow); }
+        .text-orange { color: var(--orange); }
+        .text-purple { color: var(--purple); }
+        .text-cyan { color: var(--cyan); }
+        .text-white { color: var(--white); }
+        .text-dim { color: var(--text-dim); }
+
+        .flex-row { display: flex; align-items: center; }
+        .flex-between { display: flex; align-items: center; justify-content: space-between; }
+        .mt-10 { margin-top: clamp(6px,1vh,10px); }
+        .mt-15 { margin-top: clamp(8px,1.5vh,15px); }
+        .mb-10 { margin-bottom: clamp(6px,1vh,10px); }
+
+        .pixel-mask-x {
+            -webkit-mask-image: repeating-linear-gradient(to right, black 0px, black 3px, transparent 3px, transparent 5px);
+            mask-image: repeating-linear-gradient(to right, black 0px, black 3px, transparent 3px, transparent 5px);
+        }
+        .pixel-mask-y {
+            -webkit-mask-image: repeating-linear-gradient(to top, black 0px, black 3px, transparent 3px, transparent 5px);
+            mask-image: repeating-linear-gradient(to top, black 0px, black 3px, transparent 3px, transparent 5px);
+        }
+
+        .graph-container { flex: 1; min-height: 0; display: flex; flex-direction: row; align-items: center; justify-content: flex-start; width: 100%; }
+
+        /* Plotting helpers: no animation by default. When the UI is actively
+           plotting data, add the `plotting` class to `#main-visualizer` and
+           create child columns with class `.plot-col` and a CSS var `--i`
+           (index) so they animate left-to-right (column-by-column). */
+        /* plotColIn removed — canvas engine handles rendering */
+
+        #main-visualizer {
+            flex-grow: 1; height: 100%;
+            overflow: hidden; width: 100%;
+        }
+
+        .grid-3 { display: grid; grid-template-columns: repeat(auto-fit, minmax(360px, 1fr)); gap: 1.2vw; min-height: 0; }
+
+        .panel-title {
+            color: var(--green); font-weight: bold;
+            display: flex; align-items: center; gap: 8px;
+            margin-bottom: clamp(10px,1.5vh,16px);
+            text-transform: uppercase; flex-shrink: 0;
+        }
+        .panel-title svg { width: 14px; height: 14px; }
+
+        .stat-row {
+            margin: 0; /* reduced spacing to pack stats */
+            background: transparent;
+            border: none;
+            border-radius: 0;
+            padding: 6px 6px;
+            transition: none;
+        }
+        .stat-row:hover { border-color: rgba(45,122,45,0.28); background: var(--accent-soft); }
+        .stat-row:last-of-type { margin-bottom: 0; }
+        .stat-header { display: flex; justify-content: space-between; margin-bottom: 6px; }
+        .stat-bar-container { display: flex; align-items: center; gap: 12px; }
+        .stat-bar-wrapper { flex-grow: 1; height: 8px; background-color: var(--track-bg); position: relative; border-radius: 999px; overflow: hidden; transition: background-color 0.3s ease; }
+        .stat-bar-fill { position: absolute; top: 0; left: 0; bottom: 0; border-radius: 999px; transition: width 0.8s cubic-bezier(0.4,0,0.2,1), background-color 0.3s ease; }
+
+        .diet-tag {
+            display: flex; align-items: center; gap: 10px;
+            margin-right: clamp(6px,1vh,12px);
+            font-size: clamp(11px,1.2vh,12px);
+            padding: 7px 9px;
+            border: 1px solid color-mix(in srgb, var(--border) 88%, transparent);
+            border-radius: var(--radius-sm);
+            background: color-mix(in srgb, var(--track-bg) 50%, transparent);
+            opacity: 1;
+            transform: none;
+            transition: opacity 0.2s cubic-bezier(0.4,0,0.2,1), transform 0.2s cubic-bezier(0.4,0,0.2,1), text-shadow 0.15s ease, border-color 0.15s ease, background-color 0.15s ease;
+            cursor: pointer;
+            will-change: transform, opacity;
+            flex-shrink: 0;
+        }
+        .diet-tag.visible { opacity: 1; transform: none; }
+        .diet-tag.visible:hover { transform: translateY(-3px) scale(1.02); text-shadow: 0 0 8px currentColor; border-color: currentColor; background: color-mix(in srgb, currentColor 12%, transparent); }
+
+        /* Nutrition panel: keep the panel card, but make the internal stats compact. */
+        #nutritionPanel {
+            background-color: var(--panel-bg);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-md);
+            box-shadow: var(--panel-shadow);
+            padding: clamp(10px,1.5vh,18px) clamp(10px,1.5vw,18px);
+        }
+        #nutritionPanel .panel-title { margin-bottom: 8px; }
+        .stat-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; align-items: start; }
+        #nutritionPanel .stat-header { margin-bottom: 6px; }
+
+        .logs-container {
+            flex-grow: 1; overflow-y: auto; min-height: 0;
+            display: flex; flex-direction: column; gap: 4px;
+            padding-right: 5px; scrollbar-width: none; scroll-behavior: smooth;
+        }
+        .logs-container::-webkit-scrollbar { width: 0; height: 0; }
+
+        .log-line {
+            display: flex;
+            gap: 10px;
+            padding: 4px 6px;
+            border-radius: 4px;
+            border: 1px solid transparent;
+            background: color-mix(in srgb, var(--track-bg) 55%, transparent);
+        }
+
+        @keyframes logSlideIn {
+            from { opacity: 0; transform: translateX(-12px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+        .log-line { animation: logSlideIn 0.3s cubic-bezier(0.4,0,0.2,1) backwards; }
+
+        .chat-container {
+            flex-grow: 1; display: flex; flex-direction: column;
+            gap: clamp(10px,1.5vh,16px);
+            overflow-y: auto; min-height: 0;
+            margin-bottom: clamp(8px,1.5vh,15px);
+            scrollbar-width: none; scroll-behavior: smooth;
+        }
+        .chat-container::-webkit-scrollbar { width: 0; height: 0; }
+
+        .panel-scroll {
+            overflow-y: auto;
+            overflow-x: hidden;
+            scrollbar-width: none;
+        }
+        .panel-scroll::-webkit-scrollbar { width: 0; height: 0; }
+
+        #nutritionPanel {
+            overflow: visible;
+            padding: clamp(10px,1.5vh,18px) clamp(10px,1.5vw,18px);
+        }
+        #nutritionPanel .stat-row { margin-bottom: clamp(6px,1vh,10px); }
+        #nutritionPanel .stat-row:last-of-type { margin-bottom: 0; }
+
+        #dietTagsPanel > div:nth-child(n+2) {
+            display: flex;
+            flex-wrap: wrap;
+            gap: clamp(8px,1vh,12px);
+            align-content: flex-start;
+        }
+
+        .msg-row { display: flex; gap: 12px; align-items: flex-start; }
+        .msg-row.user { flex-direction: row-reverse; }
+        .avatar { width: clamp(18px,2.5vh,22px); height: clamp(18px,2.5vh,22px); border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+        .avatar.bot { background: rgba(45,122,45,0.12); color: var(--green); }
+        .avatar.user { background: rgba(0,0,0,0.07); color: var(--text-main); }
+
+        .msg-bubble {
+            background: var(--track-bg); border: 1px solid var(--border);
+            padding: clamp(8px,1vh,12px) clamp(10px,1vw,14px);
+            border-radius: var(--radius-sm); color: var(--text-main); max-width: 85%;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.04);
+            transition: background-color 0.3s ease, border-color 0.3s ease, transform 0.2s ease;
+        }
+        .msg-bubble:hover { transform: translateY(-1px); }
+        .msg-bubble ul { margin-top: 6px; padding-left: 18px; color: var(--text-main); }
+        .msg-bubble li { margin-bottom: 3px; }
+
+        @keyframes messageBounceIn {
+            0% { opacity: 0; transform: translateY(24px) scale(0.92); }
+            100% { opacity: 1; transform: translateY(0) scale(1); }
+        }
+        .msg-bubble { animation: messageBounceIn 0.45s cubic-bezier(0.34,1.56,0.64,1); }
+
+        .chat-input-area { display: flex; gap: 8px; flex-shrink: 0; }
+        .chat-input {
+            flex-grow: 1; background: var(--bg); border: 1px solid var(--border);
+            color: var(--text-dim); padding: clamp(6px,1vh,10px) 14px;
+            border-radius: var(--radius-sm); font-family: inherit; font-size: clamp(10px,1.2vh,11px);
+            outline: none;
+            transition: background-color 0.3s ease, border-color 0.15s ease, box-shadow 0.15s ease, color 0.3s ease;
+        }
+        .chat-input:focus { border-color: var(--green); box-shadow: var(--focus-ring); color: var(--text-main); }
+        .chat-input:hover { border-color: rgba(45,122,45,0.35); }
+
+        #commandInput {
+            width: 100%;
+            background: var(--bg);
+            border: 1px solid var(--border);
+            color: var(--text-main);
+            padding: 3px 7px;
+            border-radius: 3px;
+            font-family: inherit;
+            font-size: 9px;
+            line-height: 1.4;
+            outline: none;
+            transition: border-color 0.2s cubic-bezier(0.4,0,0.2,1), box-shadow 0.2s cubic-bezier(0.4,0,0.2,1);
+        }
+        #commandInput:focus { border-color: var(--green); box-shadow: var(--focus-ring); }
+        #commandInput:hover { border-color: rgba(45,122,45,0.35); }
+
+        #consoleOutput {
+            scrollbar-color: var(--border) transparent;
+        }
+        #consoleOutput::-webkit-scrollbar { width: 4px; }
+        #consoleOutput::-webkit-scrollbar-track { background: transparent; }
+        #consoleOutput::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+        #consoleOutput::-webkit-scrollbar-thumb:hover { background: var(--text-dim); }
+
+        .chat-send {
+            background: rgba(45,122,45,0.1); border: 1px solid var(--green);
+            color: var(--green); width: clamp(28px,4vh,36px); border-radius: var(--radius-sm);
+            display: flex; align-items: center; justify-content: center;
+            cursor: pointer; transition: background-color 0.15s ease, transform 0.1s ease, box-shadow 0.2s ease;
+        }
+        .chat-send:hover { background: rgba(45,122,45,0.2); box-shadow: 0 6px 14px rgba(45,122,45,0.18); }
+        .chat-send:active { transform: scale(0.95); }
+
+        .footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 8px 0;
+            color: var(--text-dim);
+            flex-shrink: 0;
+            border-top: 1px dashed color-mix(in srgb, var(--border) 88%, transparent);
+        }
+        .footer-item { display: flex; align-items: center; gap: 8px; }
+
+        svg { display: block; }
+
+        @keyframes statusPulse {
+            0%, 100% { opacity: 0.7; }
+            50% { opacity: 1; }
+        }
+
+        @keyframes shimmer {
+            0% { background-position: -1000px 0; }
+            100% { background-position: 1000px 0; }
+        }
+        .panel.loading {
+            background: linear-gradient(90deg, var(--panel-bg) 0%, rgba(45,122,45,0.08) 50%, var(--panel-bg) 100%);
+            background-size: 1000px 100%;
+            animation: shimmer 2s infinite;
+        }
+
+        /* canvas-based graph — bar div styles no longer needed */
+        #small-graph > div { transition: height 0.25s cubic-bezier(0.4,0,0.2,1), opacity 0.2s ease; }
+
+        .graph-status { display: flex; align-items: center; gap: 6px; font-size: clamp(9px,1vh,10px); }
+        .graph-status-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--text-dim); flex-shrink: 0; transition: background 0.3s ease; }
+        .graph-status-dot.idle { background: var(--text-dim); }
+        .graph-status-dot.live { background: var(--green); animation: statusPulse 2s ease-in-out infinite; }
+        .graph-status-dot.error { background: var(--red); }
+        .graph-status-dot.demo { background: var(--yellow); animation: statusPulse 3s ease-in-out infinite; }
+        .graph-status-label { color: var(--text-dim); }
+        .graph-status-label.live { color: var(--green); }
+        .graph-status-label.error { color: var(--red); }
+        .graph-status-label.demo { color: var(--yellow); }
+
+        #processingBar { transition: width 0.4s ease-out; }
+
+        .sidebar-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.18); z-index: 99; opacity: 0; pointer-events: none; transition: opacity 0.25s ease; backdrop-filter: blur(1px); }
+        .sidebar-overlay.active { opacity: 1; pointer-events: all; }
+
+        .history-sidebar {
+            position: fixed; top: 12px; left: 56px;
+            width: 300px; height: calc(100vh - 24px);
+            background: color-mix(in srgb, var(--panel-bg) 95%, transparent);
+            backdrop-filter: blur(12px);
+            border: 1px solid var(--border); border-radius: var(--radius-lg);
+            box-shadow: 0 12px 40px rgba(0,0,0,0.15), 0 4px 12px rgba(0,0,0,0.1);
+            z-index: 100; display: flex; flex-direction: column;
+            transform: translateX(calc(-100% - 20px)); opacity: 0;
+            transition: transform 0.35s cubic-bezier(0.4,0,0.2,1), opacity 0.3s ease, background-color 0.3s ease, border-color 0.3s ease;
+            will-change: transform, opacity; overflow: hidden;
+        }
+        .history-sidebar.open { transform: translateX(0); opacity: 1; }
+        body.dark-mode .history-sidebar { box-shadow: 0 12px 40px rgba(0,0,0,0.6), 0 4px 12px rgba(0,0,0,0.4); }
+
+        .sidebar-header { display: flex; align-items: center; justify-content: space-between; padding: 14px 14px 11px; border-bottom: 1px solid var(--border); flex-shrink: 0; transition: border-color 0.3s ease; }
+        .sidebar-header-left { display: flex; align-items: center; gap: 8px; color: var(--green); font-weight: 700; font-size: clamp(10px,1.1vh,11px); text-transform: uppercase; letter-spacing: 0.6px; }
+        .sidebar-close { background: none; border: 1px solid transparent; color: var(--text-dim); cursor: pointer; padding: 4px; border-radius: 4px; display: flex; align-items: center; justify-content: center; transition: color 0.15s ease, border-color 0.15s ease, background 0.15s ease; }
+        .sidebar-close:hover { color: var(--text-main); border-color: var(--border); background: var(--track-bg); }
+
+        .sidebar-new-session { margin: 10px 12px; display: flex; align-items: center; gap: 8px; padding: 9px 12px; background: rgba(45,122,45,0.08); border: 1px solid rgba(45,122,45,0.3); border-radius: var(--radius-sm); color: var(--green); font-family: inherit; font-size: clamp(10px,1.1vh,11px); cursor: pointer; transition: background 0.2s cubic-bezier(0.4,0,0.2,1), border-color 0.2s cubic-bezier(0.4,0,0.2,1), transform 0.15s ease, box-shadow 0.2s ease; flex-shrink: 0; text-align: left; font-weight: 500; }
+        .sidebar-new-session:hover { background: rgba(45,122,45,0.15); border-color: var(--green); transform: translateY(-1px); box-shadow: 0 4px 12px rgba(45,122,45,0.15); }
+        .sidebar-new-session:active { transform: translateY(0) scale(0.98); }
+        .sidebar-section-label { padding: 8px 14px 4px; font-size: clamp(9px,1vh,10px); color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.8px; flex-shrink: 0; }
+
+        .sessions-list { flex: 1; overflow-y: auto; padding: 4px 8px 16px; scrollbar-width: none; display: flex; flex-direction: column; gap: 2px; }
+        .sessions-list::-webkit-scrollbar { width: 0; }
+
+        .session-item { display: flex; align-items: center; gap: 9px; padding: 9px 10px; border-radius: var(--radius-sm); cursor: pointer; border: 1px solid transparent; transition: background 0.2s cubic-bezier(0.4,0,0.2,1), border-color 0.2s cubic-bezier(0.4,0,0.2,1), transform 0.2s cubic-bezier(0.4,0,0.2,1); position: relative; }
+        .session-item:hover { background: var(--track-bg); border-color: var(--border); transform: translateX(2px); }
+        .session-item:active { transform: translateX(2px) scale(0.99); }
+        .session-item.active { background: rgba(45,122,45,0.1); border-color: rgba(45,122,45,0.3); }
+        .session-item-icon { color: var(--text-dim); flex-shrink: 0; display: flex; align-items: center; transition: color 0.2s ease; }
+        .session-item.active .session-item-icon { color: var(--green); }
+        .session-item-body { flex: 1; min-width: 0; }
+        .session-item-title { font-size: clamp(10px,1.1vh,11px); color: var(--text-main); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; transition: color 0.2s ease; }
+        .session-item.active .session-item-title { color: var(--green); font-weight: 500; }
+        .session-item-meta { font-size: clamp(9px,1vh,10px); color: var(--text-dim); margin-top: 3px; display: flex; align-items: center; gap: 6px; }
+        .session-badge { font-size: 8px; padding: 2px 5px; border-radius: 3px; border: 1px solid; font-weight: 500; }
+        .session-badge.high { color: var(--red); border-color: rgba(176,48,48,0.35); background: rgba(176,48,48,0.08); }
+        .session-badge.med { color: var(--yellow); border-color: rgba(160,120,0,0.35); background: rgba(160,120,0,0.08); }
+        .session-badge.low { color: var(--green); border-color: rgba(45,122,45,0.35); background: rgba(45,122,45,0.08); }
+        .session-item-delete { opacity: 0; background: none; border: none; color: var(--text-dim); cursor: pointer; padding: 4px; display: flex; align-items: center; border-radius: 3px; transition: opacity 0.2s ease, color 0.15s ease, background 0.15s ease; flex-shrink: 0; }
+        .session-item:hover .session-item-delete { opacity: 1; }
+        .session-item-delete:hover { color: var(--red); background: rgba(176,48,48,0.1); }
+        .sidebar-footer { padding: 11px 14px; border-top: 1px solid var(--border); flex-shrink: 0; display: flex; align-items: center; gap: 8px; color: var(--text-dim); font-size: clamp(9px,1vh,10px); transition: border-color 0.3s ease; }
+
+        .upload-area { width: 100%; flex: 1; min-height: 0; border-radius: var(--radius-md); overflow: hidden; margin: 1vh 0; border: 1px dashed var(--border); transition: border-color 0.2s ease, background 0.2s ease, box-shadow 0.2s ease; display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; position: relative; gap: 8px; }
+        .upload-area:hover, .upload-area.drag-over { border-color: var(--green); background: rgba(45,122,45,0.04); }
+        .upload-area.drag-over { box-shadow: inset 0 0 0 1px rgba(45,122,45,0.35), 0 10px 22px rgba(45,122,45,0.12); }
+        .upload-area.has-image { border-style: solid; border-color: var(--border); cursor: default; }
+        .upload-area img { width: 100%; height: 100%; object-fit: cover; opacity: 0.9; filter: contrast(1.1) brightness(0.9); position: absolute; inset: 0; }
+        .upload-placeholder { display: flex; flex-direction: column; align-items: center; gap: 8px; color: var(--text-dim); pointer-events: none; }
+        .upload-placeholder svg { opacity: 0.5; }
+        .upload-placeholder span { font-size: clamp(9px,1vh,10px); text-align: center; line-height: 1.5; }
+        .upload-placeholder .upload-hint { font-size: clamp(8px,0.9vh,9px); opacity: 0.6; }
+        .upload-area.has-image .upload-placeholder { display: none; }
+        #imageFileInput { display: none; }
+
+        .upload-btn-row { display: flex; gap: 6px; flex-shrink: 0; align-items: center; }
+        .upload-btn { display: flex; align-items: center; gap: 6px; padding: 5px 10px; background: rgba(45,122,45,0.08); border: 1px solid rgba(45,122,45,0.3); border-radius: var(--radius-sm); color: var(--green); font-family: inherit; font-size: clamp(9px,1vh,10px); cursor: pointer; transition: background 0.2s cubic-bezier(0.4,0,0.2,1), border-color 0.2s cubic-bezier(0.4,0,0.2,1), box-shadow 0.25s cubic-bezier(0.4,0,0.2,1), transform 0.15s ease; }
+        .upload-btn:hover { background: rgba(45,122,45,0.15); border-color: var(--green); box-shadow: 0 8px 18px rgba(45,122,45,0.14); transform: translateY(-2px); }
+        .upload-btn:active { transform: translateY(0) scale(0.98); }
+        .upload-btn.primary { background: rgba(45,122,45,0.14); border-color: rgba(45,122,45,0.42); }
+        .upload-btn.primary:hover { background: rgba(45,122,45,0.22); }
+        .upload-btn:disabled { opacity: 0.45; cursor: not-allowed; box-shadow: none; transform: none; }
+        .upload-clear-btn { display: none; align-items: center; gap: 6px; padding: 5px 10px; background: rgba(176,48,48,0.07); border: 1px solid rgba(176,48,48,0.25); border-radius: var(--radius-sm); color: var(--red); font-family: inherit; font-size: clamp(9px,1vh,10px); cursor: pointer; transition: background 0.15s ease, border-color 0.15s ease, box-shadow 0.2s ease; }
+        .upload-clear-btn.visible { display: flex; }
+        .upload-clear-btn:hover { background: rgba(176,48,48,0.14); border-color: var(--red); box-shadow: 0 8px 18px rgba(176,48,48,0.15); }
+
+        .backend-status-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-top: 10px; flex-shrink: 0; }
+        .backend-status-detail { font-size: clamp(9px,1vh,10px); color: var(--text-dim); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .backend-status-detail strong { color: var(--text-main); }
+
+        .meal-grade {
+            font-size: clamp(22px,3.2vh,30px); font-weight: 700; line-height: 1;
+            opacity: 0; transition: opacity 0.6s cubic-bezier(0.4,0,0.2,1), color 0.6s cubic-bezier(0.4,0,0.2,1);
+        }
+        .meal-grade.visible { opacity: 1; }
+
+        .score-gauge-wrap {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            flex: 1;
+            min-height: 0;
+            gap: clamp(10px,1.2vh,14px);
+            padding: clamp(4px,0.8vh,8px) 0;
+        }
+        .score-gauge {
+            --gauge-pct: 0;
+            --gauge-color: var(--red);
+            --needle-deg: -90deg;
+            width: min(100%, 250px);
+            aspect-ratio: 2 / 1;
+            position: relative;
+            overflow: hidden;
+        }
+        .score-gauge-arc { display: none; }
+        .score-gauge-needle { display: none; }
+        .score-gauge-center { display: none; }
+        .score-gauge-scoreline {
+            display: flex;
+            align-items: baseline;
+            gap: 8px;
+        }
+        .score-gauge-value {
+            color: var(--white);
+            font-size: clamp(20px,3.2vh,30px);
+            font-weight: 700;
+            line-height: 1;
+        }
+        .score-gauge-label {
+            color: var(--text-dim);
+            font-size: clamp(9px,1vh,10px);
+            letter-spacing: 0.8px;
+        }
+        .score-gauge-rank {
+            position: static;
+            transform: none;
+            font-size: clamp(16px,2.3vh,22px);
+            font-weight: 700;
+            line-height: 1;
+            text-shadow: 0 0 10px color-mix(in srgb, currentColor 20%, transparent);
+        }
+        .score-gauge-scale {
+            width: 100%;
+            display: flex;
+            justify-content: space-between;
+            color: var(--text-dim);
+            font-size: clamp(9px,1vh,10px);
+            border-top: 1px dashed color-mix(in srgb, var(--border) 88%, transparent);
+            padding-top: 8px;
+        }
+        .score-gauge-scale strong {
+            color: var(--white);
+            font-weight: 700;
+        }
+
+        @media (max-width: 1100px) {
+            body {
+                height: auto;
+                min-height: 100vh;
+                overflow: auto;
+            }
+            .app-shell { min-height: 100vh; }
+            .dashboard {
+                height: auto;
+                overflow: visible;
+                padding: 14px;
+                gap: 14px;
+            }
+            .grid-3 { grid-template-columns: 1fr; gap: 14px; }
+            .history-sidebar {
+                left: 12px;
+                top: 12px;
+                width: calc(100vw - 24px);
+            }
+            .footer {
+                flex-wrap: wrap;
+                gap: 8px 16px;
+                justify-content: flex-start;
+            }
+            .score-gauge { width: min(100%, 300px); }
+        }
+
+        @keyframes gradeReveal {
+            0% { transform: scale(1.8); opacity: 0; }
+            60% { transform: scale(0.92); opacity: 1; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+        .meal-grade.animate { animation: gradeReveal 0.6s cubic-bezier(0.34,1.56,0.64,1) forwards; }
+    </style>
+</head>
+<body>
+
+<div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+<div class="history-sidebar" id="historySidebar">
+    <div class="sidebar-header">
+        <div class="sidebar-header-left">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+            SESSION HISTORY
+        </div>
+        <button class="sidebar-close" id="sidebarClose">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+    </div>
+    <button class="sidebar-new-session" id="newSessionBtn">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+        New Analysis Session
+    </button>
+    <div class="sidebar-section-label">Recent</div>
+    <div class="sessions-list" id="sessionsList"></div>
+    <div class="sidebar-footer">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="21 8 21 21 3 21 3 8"/><rect x="1" y="3" width="22" height="5"/><line x1="10" y1="12" x2="14" y2="12"/></svg>
+        <span id="sessionCount">4 sessions stored</span>
+    </div>
+</div>
+
+<div class="app-shell">
+    <nav class="sidebar-rail">
+        <button class="rail-btn" id="historyToggleBtn">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+        </button>
+        <div class="rail-divider"></div>
+        <button class="rail-btn" id="railNewSessionBtn">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="15" y2="15"/></svg>
+        </button>
+        <div class="rail-spacer"></div>
+        <!-- <button class="rail-btn">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="21" y1="4" x2="14" y2="4"/><line x1="10" y1="4" x2="3" y2="4"/><circle cx="12" cy="4" r="2"/><line x1="21" y1="12" x2="12" y2="12"/><line x1="8" y1="12" x2="3" y2="12"/><circle cx="10" cy="12" r="2"/><line x1="21" y1="20" x2="16" y2="20"/><line x1="12" y1="20" x2="3" y2="20"/><circle cx="14" cy="20" r="2"/></svg>
+        </button> -->
+    </nav>
+
+    <div class="dashboard">
+        <div class="panel graph-panel" style="flex: 0 0 180px;" id="graphPanel">
+            <div id="main-visualizer" style="flex:1;min-height:0;width:100%;height:140px;overflow:hidden;"></div>
+            <div class="flex-between" style="margin-top:6px;flex-shrink:0;">
+                <div class="graph-status" id="graphStatus">
+                    <div class="graph-status-dot idle" id="graphStatusDot"></div>
+                    <span class="graph-status-label" id="graphStatusLabel">IDLE</span>
+                </div>
+                <span class="text-dim" style="font-size:9px;padding-right:clamp(10px,1.5vw,18px);" id="pipelinePhaseLabel">PHASE: IDLE</span>
+            </div>
+        </div>
+
+        <div class="grid-3" style="flex:1.4;">
+
+            <div class="panel" id="nutritionPanel">
+                <div class="panel-title">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 20A7 7 0 0 1 4 13C4 8 8 4 13 4a7 7 0 0 1 7 7c0 5-4 9-9 9z"/><path d="M11 20V12"/></svg>
+                    NUTRITION
+                </div>
+
+                <div class="stat-grid">
+                <div class="stat-row" data-stat="calories">
+                    <div class="stat-header">
+                        <span class="flex-row" style="gap:8px;">
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--red)" stroke-width="2.5"><path d="M8.5 14.5A2.5 2.5 0 0011 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 11-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 002.5 2.5z"/></svg>
+                            <span class="text-white">Calories</span>
+                        </span>
+                        <span class="text-green value">0 kcal</span>
+                    </div>
+                    <div class="stat-bar-container">
+                        <div class="stat-bar-wrapper pixel-mask-x"><div class="stat-bar-fill" style="width:0%;background-color:var(--green);"></div></div>
+                        <span class="text-dim percent">0%</span>
+                    </div>
+                </div>
+
+                <div class="stat-row" data-stat="protein">
+                    <div class="stat-header">
+                        <span class="flex-row" style="gap:8px;">
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--cyan)" stroke-width="2.5"><path d="M18.5 9A1.5 1.5 0 0 0 17 10.5V13a2 2 0 0 1-2 2h-1.5a1.5 1.5 0 0 1-1.5-1.5v-3A1.5 1.5 0 0 0 10.5 9H9a2 2 0 0 0-2 2v2.5a4.5 4.5 0 0 0 4.5 4.5h4a5 5 0 0 0 5-5V10.5A1.5 1.5 0 0 0 18.5 9Z"/></svg>
+                            <span class="text-white">Protein</span>
+                        </span>
+                        <span class="text-green value">0 g</span>
+                    </div>
+                    <div class="stat-bar-container">
+                        <div class="stat-bar-wrapper pixel-mask-x"><div class="stat-bar-fill" style="width:0%;background-color:var(--green);"></div></div>
+                        <span class="text-dim percent">0%</span>
+                    </div>
+                </div>
+
+                <div class="stat-row" data-stat="fat">
+                    <div class="stat-header">
+                        <span class="flex-row" style="gap:8px;">
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--yellow)" stroke-width="2.5"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/></svg>
+                            <span class="text-white">Fat (total)</span>
+                        </span>
+                        <span class="text-yellow value">0 g</span>
+                    </div>
+                    <div class="stat-bar-container">
+                        <div class="stat-bar-wrapper pixel-mask-x"><div class="stat-bar-fill" style="width:0%;background-color:var(--yellow);"></div></div>
+                        <span class="text-dim percent">0%</span>
+                    </div>
+                </div>
+
+                <div class="stat-row" data-stat="carbs">
+                    <div class="stat-header">
+                        <span class="flex-row" style="gap:8px;">
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--green)" stroke-width="2.5"><path d="M12 2v20M8 6l4-4 4 4M8 14l4-4 4 4M8 22l4-4 4 4"/></svg>
+                            <span class="text-white">Carbohydrates</span>
+                        </span>
+                        <span class="text-green value">0 g</span>
+                    </div>
+                    <div class="stat-bar-container">
+                        <div class="stat-bar-wrapper pixel-mask-x"><div class="stat-bar-fill" style="width:0%;background-color:var(--green);"></div></div>
+                        <span class="text-dim percent">0%</span>
+                    </div>
+                </div>
+                </div>
+
+                <div class="text-dim" style="font-size:clamp(9px,1vh,11px);margin-top:8px;">% based on daily value (2000 kcal diet)</div>
+            </div>
+
+            <div class="panel" id="dietTagsPanel">
+                <div class="flex-between mb-10">
+                    <div class="panel-title" style="margin-bottom:0;">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                        MEAL SCORE
+                    </div>
+                </div>
+
+                <div class="score-gauge-wrap">
+                    <canvas id="gaugeCanvas" style="width:100%;max-width:260px;display:block;margin:0 auto;"></canvas>
+                    <div style="display:flex;align-items:center;justify-content:center;gap:6px;margin-top:4px;">
+                        <div class="meal-grade text-dim" id="mealGrade" style="font-size:clamp(22px,3.2vh,30px);font-weight:700;line-height:1;opacity:0;transition:opacity 0.6s ease,color 0.6s ease;">—</div>
+                        <div class="text-dim" style="font-size:9px;letter-spacing:0.8px;">NUTRITION SCORE</div>
+                    </div>
+                    <div class="score-gauge-scale">
+                        <div><span class="text-red">0</span> POOR</div>
+                        <div><span class="text-yellow">50</span> FAIR</div>
+                        <div><strong class="text-green">100</strong> IDEAL</div>
+                    </div>
+                </div>
+
+                <div class="flex-between text-dim" style="font-size:clamp(9px,1vh,11px);margin-top:auto;">
+                    <div><span class="text-red">|</span> POOR &lt;40</div>
+                    <div><span class="text-yellow">|</span> FAIR 40-70</div>
+                    <div><span class="text-green">|</span> GOOD &gt;70</div>
+                </div>
+            </div>
+
+            <div class="panel" id="modelLogsPanel">
+                <div class="panel-title">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>
+                    DIET TAGS
+                </div>
+
+                <div id="dietTagsContainer" style="display: flex; flex-wrap: wrap; gap: clamp(6px,1vh,10px); align-content: flex-start; min-height: 40px;">
+                    <div class="text-dim" style="font-size: 10px; opacity: 0.5;">No tags yet</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="grid-3" style="flex:1.8;">
+            <div class="panel" id="assistantPanel">
+                <div class="panel-title">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+                    IMAGE ANALYSIS
+                </div>
+                <div class="upload-area" id="uploadArea">
+                    <div class="upload-placeholder">
+                        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+                        <span>Drop image here<br>or click to browse</span>
+                        <span class="upload-hint">JPG, PNG, WEBP supported</span>
+                    </div>
+                    <img id="uploadedImage" src="" alt="Uploaded food image" style="display:none;">
+                </div>
+                <input type="file" id="imageFileInput" accept="image/jpeg,image/png,image/webp,image/gif">
+                <div class="upload-btn-row">
+                    <button class="upload-btn" id="uploadBtn" type="button">
+                        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                        Upload Image
+                    </button>
+                    <button class="upload-btn primary" id="analyzeBtn" type="button" disabled>
+                        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                        Analyze Image
+                    </button>
+                    <button class="upload-clear-btn" id="uploadClearBtn" type="button">
+                        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                        Clear
+                    </button>
+                </div>
+                <div class="backend-status-row">
+                    <div class="graph-status" id="backendStatus">
+                        <div class="graph-status-dot idle" id="backendStatusDot"></div>
+                        <span class="graph-status-label" id="backendStatusLabel">CHECKING BACKEND</span>
+                    </div>
+                    <div class="backend-status-detail" id="backendStatusDetail">waiting for backend health check</div>
+                </div>
+                <div class="mt-10" style="flex-shrink:0;">
+                    <span class="text-green">model detected:</span> <span class="text-purple" id="detectedIngredients">—</span>
+                </div>
+                <div class="flex-between mt-15" style="flex-shrink:0;">
+                    <div>
+                        <span class="text-green">confidence:</span> <span class="text-purple" id="confidenceVal">—</span>
+                    </div>
+                    <div id="small-graph" class="pixel-mask-y" style="display:flex;align-items:flex-end;gap:2px;height:3vh;max-height:30px;width:100px;"></div>
+                </div>
+            </div>
+
+            <div class="panel">
+                <div class="flex-between" style="flex-shrink:0;">
+                    <div class="panel-title">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+                        MODEL LOGS
+                    </div>
+                    <div class="graph-status" id="logsStatus" style="margin-top:-15px;">
+                        <div class="graph-status-dot idle" id="logsStatusDot"></div>
+                        <span class="graph-status-label" id="logsStatusLabel">IDLE</span>
+                    </div>
+                </div>
+                <div class="logs-container" id="logsContainer">
+                    <div class="text-dim">&gt; awaiting input</div>
+                </div>
+            </div>
+
+            <div class="panel" style="display:flex;flex-direction:column;">
+                <div class="panel-title" style="flex-shrink:0;">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/></svg>
+                    TERMINAL
+                </div>
+                <div id="consoleOutput" style="flex:1;overflow-y:auto;font-size:9px;line-height:1.6;scrollbar-width:none;min-height:0;">
+                    <div class="text-dim">&gt; ready</div>
+                </div>
+                <input id="commandInput" type="text" placeholder="type command" style="flex-shrink:0;margin-top:6px;" />
+            </div>
+        </div>
+
+        <!-- no debug panel -->
+
+        <div class="footer mt-10">
+            <div class="footer-item">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--green)" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                <span class="text-green">UPTIME</span> <span class="text-white" id="uptimeDisplay">00:00:00</span>
+            </div>
+            <div class="footer-item"><span class="text-green">MODEL</span> <span class="text-white">phase2_best.pth</span></div>
+            <div class="footer-item"><span class="text-green">DATASET</span> <span class="text-white">Food-101</span></div>
+            <div class="footer-item"><span class="text-green">DISHES</span> <span class="text-white" id="footerDishes">—</span></div>
+            <div class="footer-item"><span class="text-green">MACROS</span> <span class="text-white" id="footerMacros">—</span> <span class="text-dim">ingredients</span></div>
+        </div>
+    </div>
+</div>
+
+<script>
+    function getApiBaseURL() {
+        if (window.location && window.location.origin && window.location.origin !== 'null') {
+            return `${window.location.origin}/api`;
+        }
+        return 'http://127.0.0.1:8000/api';
+    }
+
+    class AnimationEngine {
+        constructor() { this.animations = []; this.rafId = null; this.isRunning = false; }
+        start() { if (this.isRunning) return; this.isRunning = true; this.loop(); }
+        stop() { this.isRunning = false; if (this.rafId) cancelAnimationFrame(this.rafId); }
+        loop = () => {
+            const now = Date.now();
+            this.animations = this.animations.filter(anim => {
+                const progress = (now - anim.startTime) / anim.duration;
+                if (progress >= 1) { anim.onComplete?.(); return false; }
+                anim.onUpdate(progress); return true;
+            });
+            if (this.animations.length > 0) { this.rafId = requestAnimationFrame(this.loop); }
+            else { this.isRunning = false; }
+        }
+        animate(duration, onUpdate, onComplete) {
+            const animation = { startTime: Date.now(), duration, onUpdate, onComplete };
+            this.animations.push(animation); this.start(); return animation;
+        }
+        static easeOutCubic(t) { return 1 - Math.pow(1 - t, 3); }
+        static easeInOutQuad(t) { return t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t; }
+    }
+
+    class FoodAnalysisAPI {
+        constructor(baseURL = getApiBaseURL()) { this.baseURL = baseURL; this.isConnected = false; }
+        async checkConnection() {
+            try {
+                const response = await fetch(`${this.baseURL}/health`, { method: 'GET', headers: { 'Content-Type': 'application/json' } });
+                this.isConnected = response.ok; return this.isConnected;
+            } catch { this.isConnected = false; return false; }
+        }
+        async analyzeFood(imageData, filename = '') {
+            if (!this.isConnected) await this.checkConnection();
+            if (!this.isConnected) throw new Error('Backend not connected');
+            const response = await fetch(`${this.baseURL}/analyze`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ image: imageData, filename }) });
+            if (!response.ok) throw new Error('Analysis failed');
+            return await response.json();
+        }
+    }
+
+    class DataManager {
+        constructor() {
+            this.data = {
+                nutrition: { calories: 0, protein: 0, fat: 0, carbs: 0 },
+                dietTags: { positive: [], negative: [] },
+                confidence: 0, status: 'idle'
+            };
+        }
+        updateNutrition(data) { Object.assign(this.data.nutrition, data); }
+        updateDietTags(data) { Object.assign(this.data.dietTags, data); }
+        getData() { return this.data; }
+    }
+
+    class GraphEngine {
+        constructor(containerId) {
+            this.containerId     = containerId;
+            this.container       = document.getElementById(containerId);
+            this.canvas          = null;
+            this.ctx             = null;
+            // Ring buffer — newest sample at index 0, scrolls left→right visually
+            this.samples         = [];   // values 0-100
+            this.processingLevel = 0;
+            this._rafId          = null;
+            this._cpuInterval    = null;
+            this.pollingInterval = null;
+            this.isLive          = false;
+            this.demoActive      = false;
+            this.backendUrl      = getApiBaseURL();
+            this._lastCpuIdle    = 0;
+            this._lastCpuTotal   = 0;
+            this._initCanvas();
+        }
+
+        _clamp(v, lo, hi) { return Math.min(Math.max(v, lo), hi); }
+        get _BAR_W() { return 4; }
+        get _GAP()   { return 1; }
+        _barCount()  { return Math.max(1, Math.floor((this.canvas ? this.canvas.width : 800) / (this._BAR_W + this._GAP))); }
+
+        /* ── Canvas bootstrap ─────────────────────────────────────── */
+        _initCanvas() {
+            if (!this.container) return;
+            this.container.innerHTML = '';
+            this.canvas = document.createElement('canvas');
+            this.canvas.style.cssText = 'display:block;width:100%;height:100%;';
+            this.container.appendChild(this.canvas);
+            this.ctx = this.canvas.getContext('2d');
+            requestAnimationFrame(() => {
+                this._resize();
+                window.addEventListener('resize', () => this._resize());
+                this._startCpuPolling();
+                this._startRenderLoop();
+            });
+        }
+
+        _resize() {
+            if (!this.canvas || !this.container) return;
+            const rect = this.container.getBoundingClientRect();
+            const W = Math.floor(rect.width)  || 800;
+            const H = Math.floor(rect.height) || 140;
+            if (this.canvas.width === W && this.canvas.height === H) return;
+            this.canvas.width  = W;
+            this.canvas.height = H;
+            const n = this._barCount();
+            // Preserve existing samples, pad with zeros
+            while (this.samples.length < n) this.samples.push(0);
+            if (this.samples.length > n) this.samples = this.samples.slice(0, n);
+        }
+
+        /* ── Real CPU usage via Performance API ───────────────────── */
+        _startCpuPolling() {
+            // Use performance.now() delta to estimate main-thread busyness.
+            // We measure how much time a 100ms setTimeout actually takes —
+            // if the thread is busy it takes longer → higher "cpu" reading.
+            // This is the only real resource metric available in a browser.
+            let lastExpected = performance.now();
+            const INTERVAL = 800; // ms between samples
+
+            const measure = () => {
+                const now = performance.now();
+                const delta = now - lastExpected;
+                lastExpected = now + INTERVAL;
+                // delta > INTERVAL means thread was blocked → high load
+                // Clamp to 0-100 range: 0ms extra = 0%, 500ms extra = 100%
+                const load = this._clamp(Math.round((delta / INTERVAL) * 60), 0, 100);
+                this._addSample(load);
+                this._cpuInterval = setTimeout(measure, INTERVAL);
+            };
+            this._cpuInterval = setTimeout(measure, INTERVAL);
+        }
+
+        _stopCpuPolling() {
+            if (this._cpuInterval) { clearTimeout(this._cpuInterval); this._cpuInterval = null; }
+        }
+
+        /* ── Add a new sample — scrolls left→right ────────────────── */
+        _addSample(val) {
+            const n = this._barCount();
+            if (this.samples.length !== n) {
+                while (this.samples.length < n) this.samples.unshift(0);
+                if (this.samples.length > n) this.samples = this.samples.slice(0, n);
+            }
+            // Shift everything left, append new value on the RIGHT
+            this.samples.shift();
+            this.samples.push(this._clamp(val, 0, 100));
+        }
+
+        /* ── Continuous render loop ───────────────────────────────── */
+        _startRenderLoop() {
+            if (this._rafId) return;
+            const loop = () => {
+                this._draw();
+                this._rafId = requestAnimationFrame(loop);
+            };
+            this._rafId = requestAnimationFrame(loop);
+        }
+
+        /* ── Core draw ────────────────────────────────────────────── */
+        _draw() {
+            const c = this.ctx;
+            if (!c || !this.canvas) return;
+            const W    = this.canvas.width;
+            const H    = this.canvas.height;
+            const BAR  = this._BAR_W;
+            const STEP = BAR + this._GAP;
+            const style = getComputedStyle(document.documentElement);
+            const green = style.getPropertyValue('--green').trim() || '#2d7a2d';
+            const dim   = style.getPropertyValue('--track-bg').trim() || '#e4e4e0';
+
+            c.clearRect(0, 0, W, H);
+
+            // Draw baseline
+            c.fillStyle = dim;
+            c.globalAlpha = 0.3;
+            c.fillRect(0, H - 1, W, 1);
+            c.globalAlpha = 1;
+
+            const n = this.samples.length;
+            for (let i = 0; i < n; i++) {
+                const val  = this._clamp(this.samples[i] || 0, 0, 100);
+                if (val === 0) continue;
+                const barH = Math.max(BAR, Math.round((val / 100) * (H - 2)));
+                const x    = i * STEP;
+                // Colour: green at low, yellow at mid, red at high
+                const hue  = val < 50 ? 120 : val < 80 ? 60 : 0;
+                c.fillStyle   = `hsl(${hue}, 55%, 38%)`;
+                c.globalAlpha = 0.7 + (val / 100) * 0.3;
+                // Pixelated blocks from bottom
+                for (let y = H - BAR - 1; y >= H - barH - 1; y -= STEP) {
+                    c.fillRect(x, y, BAR, BAR);
+                }
+            }
+            c.globalAlpha = 1;
+
+            // Label
+            c.fillStyle = style.getPropertyValue('--text-dim').trim() || '#909088';
+            c.font = '9px monospace';
+            c.fillText('CPU', 4, 12);
+        }
+
+        /* ── Processing: boost samples during analysis ────────────── */
+        activateVisualization() {
+            this.demoActive = true;
+            this._setStatus('demo', 'PROCESSING');
+        }
+
+        settleVisualization() {
+            this.demoActive = false;
+            this._setStatus('idle', 'IDLE');
+        }
+
+        setProcessing(pct, label) {
+            const phaseLabel = document.getElementById('pipelinePhaseLabel');
+            this.processingLevel = this._clamp((pct || 0) / 100, 0, 1);
+            if (phaseLabel) phaseLabel.textContent = label ? `PHASE: ${label}` : 'PHASE: IDLE';
+            // During active processing, inject the pct as a CPU-like spike
+            if (this.demoActive && pct > 0) this._addSample(pct);
+        }
+
+        pushBars(data) { /* no-op — we use real CPU now */ }
+
+        /* ── Status helpers ───────────────────────────────────────── */
+        _setStatus(state, label) {
+            const dot = document.getElementById('graphStatusDot');
+            const lbl = document.getElementById('graphStatusLabel');
+            if (!dot || !lbl) return;
+            dot.className = 'graph-status-dot ' + state;
+            lbl.className = 'graph-status-label ' + state;
+            lbl.textContent = label;
+        }
+
+        _setLogsStatus(state, label) {
+            const dot = document.getElementById('logsStatusDot');
+            const lbl = document.getElementById('logsStatusLabel');
+            if (!dot || !lbl) return;
+            dot.className = 'graph-status-dot ' + state;
+            lbl.className = 'graph-status-label ' + state;
+            lbl.textContent = label;
+        }
+
+        connect(backendUrl, intervalMs = 1000) {
+            this.backendUrl = backendUrl || this.backendUrl;
+            if (this.pollingInterval) { clearInterval(this.pollingInterval); this.pollingInterval = null; }
+            this.isLive = true;
+            this._setStatus('live', 'LIVE');
+            this._setLogsStatus('live', 'LIVE');
+
+            const poll = async () => {
+                try {
+                    const res = await fetch(`${this.backendUrl}/sysinfo`, { signal: AbortSignal.timeout(1500) });
+                    if (!res.ok) throw new Error('non-ok');
+                    const data = await res.json();
+                    if (typeof data.cpu_pct === 'number') {
+                        this._addSample(data.cpu_pct);
+                    }
+                    // Update status label from backend state
+                    if (data.status) {
+                        const stateMap = { idle:['idle','IDLE'], processing:['live','PROCESSING'], complete:['live','COMPLETE'], error:['error','ERROR'] };
+                        const [s, l] = stateMap[data.status] || ['live', data.status.toUpperCase()];
+                        if (!this.demoActive) { this._setStatus(s, l); this._setLogsStatus(s, l); }
+                    }
+                } catch {
+                    // sysinfo unavailable — browser CPU estimate still running via _startCpuPolling
+                }
+            };
+            poll();
+            this.pollingInterval = setInterval(poll, intervalMs);
+        }
+
+        disconnect() {
+            if (this.pollingInterval) { clearInterval(this.pollingInterval); this.pollingInterval = null; }
+            this.isLive = false;
+            this._setStatus('idle', 'IDLE');
+            this._setLogsStatus('idle', 'IDLE');
+            this.setProcessing(0, 'IDLE');
+            this.settleVisualization();
+        }
+    }
+
+    class UIController {
+        constructor(animationEngine, dataManager) {
+            this.animationEngine = animationEngine;
+            this.dataManager = dataManager;
+            this.isDarkMode = false;
+            this.setupEventListeners();
+            this.setupPanelEntranceAnimations();
+        }
+
+        setupEventListeners() {
+            return;
+        }
+
+        setupPanelEntranceAnimations() {
+            const panels = document.querySelectorAll('.panel');
+            panels.forEach((panel, index) => {
+                panel.style.opacity = '0';
+                panel.style.transform = 'translateY(8px)';
+                setTimeout(() => {
+                    this.animationEngine.animate(400, (progress) => {
+                        const eased = AnimationEngine.easeOutCubic(progress);
+                        panel.style.opacity = eased;
+                        panel.style.transform = `translateY(${8 * (1 - eased)}px)`;
+                    });
+                }, index * 30);
+            });
+        }
+
+        applyTheme(mode) {
+            if (mode === 'dark') { document.body.classList.add('dark-mode'); this.isDarkMode = true; }
+            else { document.body.classList.remove('dark-mode'); this.isDarkMode = false; }
+        }
+
+        addMessage(text, sender) {
+            // Replaced with command console - no-op
+        }
+    }
+
+    function addConsoleOutput(text) {
+        const consoleOutput = document.getElementById('consoleOutput');
+        if (!consoleOutput) return;
+        const line = document.createElement('div');
+        line.className = 'text-dim';
+        line.textContent = text;
+        consoleOutput.appendChild(line);
+        consoleOutput.scrollTop = consoleOutput.scrollHeight;
+    }
+
+    function computeMealScore(nutrition, positiveTags, totalTags) {
+        const cal_pct = Math.min((nutrition.calories / 2000) * 100, 100);
+        const pro_pct = Math.min((nutrition.protein / 50) * 100, 100);
+        const fat_pct = Math.min((nutrition.fat / 78) * 100, 100);
+        const carb_pct = Math.min((nutrition.carbs / 300) * 100, 100);
+        const mean = (cal_pct + pro_pct + fat_pct + carb_pct) / 4;
+        const variance = ((cal_pct-mean)**2 + (pro_pct-mean)**2 + (fat_pct-mean)**2 + (carb_pct-mean)**2) / 4;
+        const stdDev = Math.sqrt(variance);
+        const balance = Math.max(0, Math.round(100 - stdDev * 2));
+        const proteinQual = Math.round(pro_pct);
+        const fatLoad = Math.round(100 - fat_pct);
+        const dietFit = totalTags > 0 ? Math.round((positiveTags / totalTags) * 100) : 50;
+        const overall = Math.round((balance + proteinQual + fatLoad + dietFit) / 4);
+        return { overall, balance, proteinQual, fatLoad, dietFit };
+    }
+
+    function getGrade(score) {
+        if (score >= 85) return { letter: 'A', color: 'var(--green)' };
+        if (score >= 70) return { letter: 'B', color: 'var(--cyan)' };
+        if (score >= 55) return { letter: 'C', color: 'var(--yellow)' };
+        return { letter: 'D', color: 'var(--red)' };
+    }
+
+    function scoreToNeedleDeg(score) {
+        const clamped = Math.max(0, Math.min(100, score));
+        return -90 + (clamped / 100) * 180;
+    }
+
+    // ── Canvas gauge ──────────────────────────────────────────────────────────
+    let _gaugeScore = 0;
+    let _gaugeColor = '#b03030';
+    let _gaugeRaf   = null;
+    let _gaugeAnimStart = null;
+    let _gaugeFromScore = 0;
+
+    function _resolveColor(cssVar) {
+        // Resolve CSS variable to hex
+        const map = {
+            'var(--green)':  '#2d7a2d',
+            'var(--cyan)':   '#2888a8',
+            'var(--yellow)': '#a07800',
+            'var(--red)':    '#b03030',
+        };
+        return map[cssVar] || cssVar;
+    }
+
+    function _drawGauge(score, color) {
+        const canvas = document.getElementById('gaugeCanvas');
+        if (!canvas) return;
+        const dpr = window.devicePixelRatio || 1;
+        const W   = canvas.offsetWidth  || 260;
+        const H   = Math.round(W * 0.55); // slightly taller than pure semicircle for needle room
+        canvas.width  = W * dpr;
+        canvas.height = H * dpr;
+        canvas.style.height = H + 'px';
+        const c = canvas.getContext('2d');
+        c.scale(dpr, dpr);
+        c.clearRect(0, 0, W, H);
+
+        const cx = W / 2;
+        const cy = H - 14;          // pivot at bottom-center with small margin
+        const R  = Math.min(cx - 8, cy - 4);  // outer radius
+        const r  = R * 0.62;        // inner radius (donut thickness)
+        const START = Math.PI;      // 180° — left
+        const END   = 0;            // 0°  — right
+        const pct   = Math.max(0, Math.min(100, score)) / 100;
+        const sweepEnd = Math.PI + pct * Math.PI; // from left, sweep clockwise
+
+        const style = getComputedStyle(document.documentElement);
+        const trackColor = style.getPropertyValue('--track-bg').trim() || '#e4e4e0';
+        const resolvedColor = _resolveColor(color);
+
+        // Track (full arc, grey)
+        c.beginPath();
+        c.arc(cx, cy, R, Math.PI, 0, false);
+        c.arc(cx, cy, r, 0, Math.PI, true);
+        c.closePath();
+        c.fillStyle = trackColor;
+        c.fill();
+
+        // Filled arc (score portion)
+        if (pct > 0) {
+            c.beginPath();
+            c.arc(cx, cy, R, Math.PI, sweepEnd, false);
+            c.arc(cx, cy, r, sweepEnd, Math.PI, true);
+            c.closePath();
+            c.fillStyle = resolvedColor;
+            c.globalAlpha = 0.92;
+            c.fill();
+            c.globalAlpha = 1;
+        }
+
+        // Needle
+        const needleAngle = Math.PI + pct * Math.PI; // same as sweepEnd
+        const needleLen   = R - 4;
+        const nx = cx + Math.cos(needleAngle) * needleLen;
+        const ny = cy + Math.sin(needleAngle) * needleLen;
+        c.beginPath();
+        c.moveTo(cx, cy);
+        c.lineTo(nx, ny);
+        c.strokeStyle = style.getPropertyValue('--white').trim() || '#1a1a18';
+        c.lineWidth   = 2;
+        c.lineCap     = 'round';
+        c.stroke();
+
+        // Pivot dot
+        c.beginPath();
+        c.arc(cx, cy, 5, 0, Math.PI * 2);
+        c.fillStyle = style.getPropertyValue('--white').trim() || '#1a1a18';
+        c.fill();
+    }
+
+    function animateGaugeTo(targetScore, colorVar) {
+        const fromScore = _gaugeFromScore;
+        _gaugeColor     = colorVar;
+        _gaugeAnimStart = null;
+        const DURATION  = 900;
+
+        if (_gaugeRaf) cancelAnimationFrame(_gaugeRaf);
+        const tick = (ts) => {
+            if (!_gaugeAnimStart) _gaugeAnimStart = ts;
+            const t = Math.min(1, (ts - _gaugeAnimStart) / DURATION);
+            // ease out cubic
+            const eased = 1 - Math.pow(1 - t, 3);
+            const current = fromScore + (targetScore - fromScore) * eased;
+            _drawGauge(current, colorVar);
+            if (t < 1) _gaugeRaf = requestAnimationFrame(tick);
+            else { _gaugeFromScore = targetScore; _gaugeScore = targetScore; }
+        };
+        _gaugeRaf = requestAnimationFrame(tick);
+    }
+
+    function resetAllMetrics() {
+        document.querySelectorAll('[data-stat]').forEach(stat => {
+            const bar = stat.querySelector('.stat-bar-fill');
+            const pct = stat.querySelector('.percent');
+            const val = stat.querySelector('.value');
+            if (bar) bar.style.width = '0%';
+            if (pct) pct.textContent = '0%';
+            if (val) val.textContent = stat.dataset.stat === 'calories' ? '0 kcal' : '0 g';
+        });
+        const gauge = document.getElementById('mealGauge');
+        if (gauge) {
+            gauge.style.setProperty('--gauge-pct', '0');
+            gauge.style.setProperty('--gauge-color', 'var(--red)');
+        }
+        const needle = document.getElementById('mealGaugeNeedle');
+        if (needle) needle.style.setProperty('--needle-deg', '-90deg');
+        const grade = document.getElementById('mealGrade');
+        if (grade) { grade.textContent = '—'; grade.style.color = 'var(--text-dim)'; grade.style.opacity = '0'; grade.classList.remove('visible', 'animate'); }
+        _gaugeFromScore = 0; _gaugeScore = 0;
+        _drawGauge(0, 'var(--red)');
+        // Clear diet tags
+        const tagsContainer = document.getElementById('dietTagsContainer');
+        if (tagsContainer) {
+            tagsContainer.innerHTML = '<div class="text-dim" style="font-size: 10px; opacity: 0.5;">No tags yet</div>';
+        }
+        
+        document.getElementById('detectedIngredients').textContent = '—';
+        document.getElementById('confidenceVal').textContent = '—';
+        const sg = document.getElementById('small-graph');
+        if (sg) sg.innerHTML = '';
+    }
+
+    function addLog(time, type, msg, metadata) {
+        const container = document.getElementById('logsContainer');
+        const line = document.createElement('div');
+        line.className = 'log-line';
+        const typeColor = type === 'SUCCESS' ? 'var(--green)' : type === 'ERROR' ? 'var(--red)' : 'var(--green)';
+        let logText = `<span class="text-dim">${time}</span><span style="color:${typeColor}">[${type}]</span><span class="text-dim">${msg}</span>`;
+        
+        // Add model input/output if available
+        if (metadata) {
+            if (metadata.model_input) logText += ` <span style="color:var(--cyan); font-size:10px;">input: ${metadata.model_input.substring(0, 30)}...</span>`;
+            if (metadata.model_output) logText += ` <span style="color:var(--yellow); font-size:10px;">output: ${metadata.model_output.substring(0, 30)}...</span>`;
+        }
+        
+        line.innerHTML = logText;
+        container.appendChild(line);
+        container.scrollTop = container.scrollHeight;
+    }
+
+    let analysisRunning = false;
+    let analysisRequestId = 0;
+    let selectedUploadFile = null;
+    let selectedUploadDataUrl = '';
+    let backendConnected = false;
+
+    function updateAnalyzeButtonState() {
+        const analyzeBtn = document.getElementById('analyzeBtn');
+        if (!analyzeBtn) return;
+        analyzeBtn.disabled = !selectedUploadFile || !backendConnected || analysisRunning;
+    }
+
+    function setBackendStatus(connected, detailText) {
+        backendConnected = connected;
+        const dot = document.getElementById('backendStatusDot');
+        const label = document.getElementById('backendStatusLabel');
+        const detail = document.getElementById('backendStatusDetail');
+        if (dot) dot.className = 'graph-status-dot ' + (connected ? 'live' : 'error');
+        if (label) {
+            label.className = 'graph-status-label ' + (connected ? 'live' : 'error');
+            label.textContent = connected ? 'BACKEND CONNECTED' : 'BACKEND OFFLINE';
+        }
+        if (detail) detail.textContent = detailText || (connected ? 'API ready for image analysis' : 'Start the backend to enable Analyze Image');
+        updateAnalyzeButtonState();
+    }
+
+    async function refreshBackendHealth() {
+        try {
+            const health = await api.checkConnection();
+            if (health) {
+                setBackendStatus(true, 'API ready for image analysis');
+                graphEngine.connect(api.baseURL, 1000);
+                // Populate footer with real dataset counts
+                try {
+                    const res = await fetch(`${api.baseURL}/health`);
+                    const data = await res.json();
+                    const d = document.getElementById('footerDishes');
+                    const m = document.getElementById('footerMacros');
+                    if (d) d.textContent = data.datasets?.dishes ?? '—';
+                    if (m) m.textContent = data.datasets?.macros ?? '—';
+                } catch {}
+                return true;
+            }
+        } catch {}
+        setBackendStatus(false, 'Start the backend to enable Analyze Image');
+        graphEngine.disconnect();
+        return false;
+    }
+
+    async function runSelectedImageAnalysis() {
+        if (!selectedUploadFile || analysisRunning) return;
+        if (!backendConnected) {
+            await refreshBackendHealth();
+            if (!backendConnected) {
+                addLog('00:00:00', 'ERROR', 'backend offline — start backend.py first');
+                return;
+            }
+        }
+
+        analysisRunning = true;
+        updateAnalyzeButtonState();
+
+        try {
+            if (!selectedUploadDataUrl) {
+                selectedUploadDataUrl = await new Promise((resolve, reject) => {
+                    const reader = new FileReader();
+                    reader.onload = () => resolve(reader.result);
+                    reader.onerror = () => reject(reader.error || new Error('Failed to read file'));
+                    reader.readAsDataURL(selectedUploadFile);
+                });
+            }
+            const backendResult = await api.analyzeFood(selectedUploadDataUrl, selectedUploadFile.name);
+            runAnalysis(selectedUploadFile.name, backendResult);
+        } catch (error) {
+            graphEngine._setLogsStatus('error', 'ERROR');
+            graphEngine.setProcessing(0, 'BACKEND ERROR');
+            addLog('00:00:00', 'ERROR', `analysis failed: ${error.message || error}`);
+            analysisRunning = false;
+            updateAnalyzeButtonState();
+        }
+    }
+
+    function renderBackendResult(filename, result) {
+        resetAllMetrics();
+
+        // ── 1. Nutrition — update immediately, no delays ──────────────
+        const nutrition = result.nutrition || result.macros || { calories: 0, protein: 0, fat: 0, carbs: 0 };
+        const configs = {
+            calories: { display: `${Math.round(nutrition.calories || 0)} kcal`, pct: Math.min(100, Math.round(((nutrition.calories || 0) / 2000) * 100)), color: 'var(--red)' },
+            protein:  { display: `${Math.round(nutrition.protein  || 0)} g`,    pct: Math.min(100, Math.round(((nutrition.protein  || 0) / 50)   * 100)), color: 'var(--cyan)' },
+            fat:      { display: `${Math.round(nutrition.fat      || 0)} g`,    pct: Math.min(100, Math.round(((nutrition.fat      || 0) / 78)   * 100)), color: 'var(--yellow)' },
+            carbs:    { display: `${Math.round(nutrition.carbs    || 0)} g`,    pct: Math.min(100, Math.round(((nutrition.carbs    || 0) / 300)  * 100)), color: 'var(--green)' },
+        };
+        Object.entries(configs).forEach(([key, cfg]) => {
+            const stat = document.querySelector(`[data-stat="${key}"]`);
+            if (!stat) return;
+            const bar = stat.querySelector('.stat-bar-fill');
+            const pct = stat.querySelector('.percent');
+            const val = stat.querySelector('.value');
+            // Set immediately so CSS transition animates from 0→value
+            if (bar) { bar.style.backgroundColor = cfg.color; bar.style.width = `${cfg.pct}%`; }
+            if (pct) pct.textContent = `${cfg.pct}%`;
+            if (val) val.textContent = cfg.display;
+        });
+
+        // ── 2. Score + grade ──────────────────────────────────────────
+        const scoreValue = typeof result.score === 'number' ? result.score
+            : computeMealScore(nutrition,
+                (result.diet_tags?.positive || []).length,
+                (result.diet_tags?.positive || []).length + (result.diet_tags?.negative || []).length
+              ).overall;
+        const grade = result.grade || getGrade(scoreValue);
+        const scoreColor = grade.color || (scoreValue >= 70 ? 'var(--green)' : scoreValue >= 40 ? 'var(--yellow)' : 'var(--red)');
+
+        const gradeEl  = document.getElementById('mealGrade');
+        if (gradeEl) { gradeEl.textContent = grade.letter || '—'; gradeEl.style.color = scoreColor; gradeEl.style.opacity = '1'; gradeEl.classList.add('animate'); }
+        _drawGauge(0, scoreColor);
+        setTimeout(() => animateGaugeTo(scoreValue, scoreColor), 80);
+        // ── 3. Diet tags ──────────────────────────────────────────────
+        const tagsContainer = document.getElementById('dietTagsContainer');
+        if (tagsContainer) {
+            tagsContainer.innerHTML = '';
+            const positiveTags = result.diet_tags?.positive || [];
+            const negativeTags = result.diet_tags?.negative || [];
+
+            // Tag metadata: icon SVG path + colour class
+            const TAG_META = {
+                // positive
+                'high-protein':   { color: 'text-cyan',   icon: 'P' },
+                'low-carb':       { color: 'text-green',  icon: 'LC' },
+                'low-fat':        { color: 'text-green',  icon: 'LF' },
+                'light':          { color: 'text-green',  icon: 'LT' },
+                'vegetarian':     { color: 'text-green',  icon: 'VG' },
+                'seafood':        { color: 'text-cyan',   icon: 'SF' },
+                'gluten-free':    { color: 'text-yellow', icon: 'GF' },
+                'dairy-free':     { color: 'text-yellow', icon: 'DF' },
+                'balanced':       { color: 'text-green',  icon: 'BL' },
+                // negative
+                'non-vegetarian': { color: 'text-orange', icon: 'NV' },
+                'high-carb':      { color: 'text-yellow', icon: 'HC' },
+                'high-fat':       { color: 'text-red',    icon: 'HF' },
+                'high-calorie':   { color: 'text-red',    icon: 'HK' },
+                'junk-food':      { color: 'text-red',    icon: 'JK' },
+                'low-protein':    { color: 'text-yellow', icon: 'LP' },
+            };
+
+            if (positiveTags.length === 0 && negativeTags.length === 0) {
+                tagsContainer.innerHTML = '<div class="text-dim" style="font-size:10px;opacity:0.5;">No tags available</div>';
+            } else {
+                [...positiveTags, ...negativeTags].forEach((tag, i) => {
+                    const meta = TAG_META[tag] || { color: 'text-dim', icon: '•' };
+                    const el = document.createElement('div');
+                    el.className = `diet-tag ${meta.color}`;
+                    el.style.opacity = '0';
+                    el.style.transform = 'translateY(6px)';
+                    el.innerHTML = `<span style="font-size:8px;font-weight:700;letter-spacing:0.5px;opacity:0.8;">${meta.icon}</span><span>${tag}</span>`;
+                    tagsContainer.appendChild(el);
+                    setTimeout(() => {
+                        el.style.transition = 'opacity 0.3s ease, transform 0.3s cubic-bezier(0.34,1.56,0.64,1)';
+                        el.style.opacity = '1';
+                        el.style.transform = 'translateY(0)';
+                        el.classList.add('visible');
+                    }, 40 + i * 70);
+                });
+            }
+        }
+
+        // ── 4. Image analysis panel ───────────────────────────────────
+        const predictedText = result.dish_text || result.predicted_text || filename;
+        const matchedDish   = result.matched_dish || predictedText;
+        document.getElementById('detectedIngredients').textContent = predictedText || matchedDish || '—';
+        document.getElementById('confidenceVal').textContent = typeof result.confidence === 'number' ? result.confidence.toFixed(2) : '—';
+
+        const sg = document.getElementById('small-graph');
+        if (sg) {
+            sg.innerHTML = '';
+            const bars = Array.isArray(result.bars) && result.bars.length > 0 ? result.bars : [];
+            (bars.length > 0 ? bars : Array.from({ length: 20 }, (_, i) => 20 + (i * 7) % 80))
+                .slice(0, 20).forEach(value => {
+                    const b = document.createElement('div');
+                    b.style.cssText = `flex:1;min-width:2px;background:var(--purple);height:${Math.max(10, Math.min(100, value))}%`;
+                    sg.appendChild(b);
+                });
+        }
+
+        // ── 5. Graph + logs — activate AFTER data is painted ─────────
+        graphEngine.activateVisualization();
+        graphEngine._setLogsStatus('live', 'LIVE');
+
+        const container = document.getElementById('logsContainer');
+        container.innerHTML = '';
+        const logs = Array.isArray(result.logs) && result.logs.length > 0 ? result.logs : [
+            { time: '00:00:00', type: 'INFO',    msg: 'image uploaded successfully' },
+            { time: '00:00:01', type: 'INFO',    msg: 'running local model inference' },
+            { time: '00:00:02', type: 'INFO',    msg: 'fuzzy matching dish to food101' },
+            { time: '00:00:03', type: 'INFO',    msg: 'aggregating ingredient macros' },
+            { time: '00:00:04', type: 'SUCCESS', msg: 'analysis complete' },
+        ];
+        logs.forEach((entry, index) => {
+            setTimeout(() => {
+                addLog(entry.time || '00:00:00', entry.type || 'INFO', entry.msg || '');
+                graphEngine.setProcessing(
+                    Math.min(100, 20 + index * 18),
+                    entry.type === 'SUCCESS' ? 'COMPLETE' : 'PROCESSING'
+                );
+            }, index * 200);
+        });
+
+        const totalDelay = logs.length * 200 + 400;
+        setTimeout(() => {
+            graphEngine.setProcessing(100, 'COMPLETE');
+            const readyLine = document.createElement('div');
+            readyLine.className = 'text-green';
+            readyLine.style.marginTop = '8px';
+            readyLine.textContent = '> system ready for next input';
+            container.appendChild(readyLine);
+            container.scrollTop = 9999;
+        }, totalDelay);
+
+        setTimeout(() => {
+            graphEngine.settleVisualization();
+            graphEngine._setLogsStatus('idle', 'IDLE');
+            analysisRunning = false;
+            updateAnalyzeButtonState();
+            saveAnalysisToHistory(filename, result);
+        }, totalDelay + 800);
+    }
+    function runAnalysis(filename, backendResult = null) {
+        if (backendResult) {
+            renderBackendResult(filename, backendResult);
+            return;
+        }
+        // No backend — show clear error, do not run fake demo data
+        if (!backendConnected) {
+            const container = document.getElementById('logsContainer');
+            if (container) {
+                container.innerHTML = '';
+                addLog('00:00:00', 'ERROR', 'backend not connected — start backend.py to analyse images');
+            }
+            return;
+        }
+    }
+
+    const animationEngine = new AnimationEngine();
+    const dataManager = new DataManager();
+    const api = new FoodAnalysisAPI();
+    const graphEngine = new GraphEngine('main-visualizer');
+    const uiController = new UIController(animationEngine, dataManager);
+
+    window.addEventListener('load', async () => {
+        graphEngine._setStatus('idle', 'READY');
+        graphEngine._setLogsStatus('idle', 'READY');
+        graphEngine.setProcessing(0, 'IDLE');
+        requestAnimationFrame(() => _drawGauge(0, 'var(--red)'));
+        await refreshBackendHealth();
+        setInterval(refreshBackendHealth, 5000);
+    });
+
+    function buildSmallGraph() {
+        const container = document.getElementById('small-graph');
+        if (!container) return;
+        container.innerHTML = '';
+        for (let i = 0; i < 20; i++) {
+            const bar = document.createElement('div');
+            bar.style.flex = '1'; bar.style.minWidth = '2px';
+            bar.style.backgroundColor = 'var(--purple)';
+            bar.style.height = (Math.random() * 80 + 20) + '%';
+            container.appendChild(bar);
+        }
+    }
+
+    let uptimeSeconds = 0;
+    setInterval(() => {
+        uptimeSeconds++;
+        const h = Math.floor(uptimeSeconds / 3600).toString().padStart(2,'0');
+        const m = Math.floor((uptimeSeconds % 3600) / 60).toString().padStart(2,'0');
+        const s = (uptimeSeconds % 60).toString().padStart(2,'0');
+        const el = document.getElementById('uptimeDisplay');
+        if (el) el.textContent = `${h}:${m}:${s}`;
+    }, 1000);
+
+    const SESSION_STORAGE_KEY = 'foodAnalysisSessions';
+
+    function loadSessions() { 
+        try { 
+            const s = localStorage.getItem(SESSION_STORAGE_KEY); 
+            return s ? JSON.parse(s) : []; 
+        } catch { 
+            return []; 
+        } 
+    }
+    function saveSessions(sessions) { try { localStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify(sessions)); } catch {} }
+    function riskLabel(risk) { return risk === 'high' ? 'HIGH RISK' : risk === 'med' ? 'MED RISK' : 'LOW RISK'; }
+
+    function renderSessions() {
+        const sessions = loadSessions();
+        const list = document.getElementById('sessionsList');
+        const countEl = document.getElementById('sessionCount');
+        if (!list) return;
+        list.innerHTML = '';
+        
+        if (sessions.length === 0) {
+            const emptyState = document.createElement('div');
+            emptyState.style.cssText = 'padding: 40px 20px; text-align: center; color: var(--text-dim); font-size: 11px;';
+            emptyState.innerHTML = `
+                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="opacity: 0.3; margin: 0 auto 12px;">
+                    <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
+                    <circle cx="12" cy="13" r="4"/>
+                </svg>
+                <div style="margin-bottom: 8px; color: var(--text-main);">No analysis history yet</div>
+                <div style="font-size: 10px;">Upload and analyze an image to get started</div>
+            `;
+            list.appendChild(emptyState);
+            if (countEl) countEl.textContent = 'No sessions stored';
+            return;
+        }
+        
+        const groups = {};
+        sessions.forEach(s => { if (!groups[s.date]) groups[s.date] = []; groups[s.date].push(s); });
+        Object.entries(groups).forEach(([date, items]) => {
+            const label = document.createElement('div');
+            label.className = 'sidebar-section-label';
+            label.style.paddingTop = '10px';
+            label.textContent = date;
+            list.appendChild(label);
+            items.forEach(session => {
+                const item = document.createElement('div');
+                item.className = 'session-item' + (session.active ? ' active' : '');
+                item.dataset.id = session.id;
+                item.innerHTML = `
+                    <div class="session-item-icon"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg></div>
+                    <div class="session-item-body">
+                        <div class="session-item-title">${session.title}</div>
+                        <div class="session-item-meta"><span>${session.time}</span><span>${session.kcal} kcal</span><span class="session-badge ${session.risk}">${riskLabel(session.risk)}</span></div>
+                    </div>
+                    <button class="session-item-delete" data-id="${session.id}"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg></button>
+                `;
+                item.addEventListener('click', (e) => {
+                    if (e.target.closest('.session-item-delete')) return;
+                    const all = loadSessions(); all.forEach(s => s.active = s.id === session.id);
+                    saveSessions(all); renderSessions();
+                    
+                    // Load the session result if available
+                    if (session.result) {
+                        renderBackendResult(session.title.split(' — ')[0] || 'image', session.result);
+                    }
+                });
+                item.querySelector('.session-item-delete').addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    const all = loadSessions().filter(s => s.id !== session.id);
+                    saveSessions(all); renderSessions();
+                });
+                list.appendChild(item);
+            });
+        });
+        if (countEl) countEl.textContent = `${sessions.length} session${sessions.length !== 1 ? 's' : ''} stored`;
+    }
+
+    function openSidebar() { document.getElementById('historySidebar').classList.add('open'); document.getElementById('sidebarOverlay').classList.add('active'); document.getElementById('historyToggleBtn').classList.add('active'); }
+    function closeSidebar() { document.getElementById('historySidebar').classList.remove('open'); document.getElementById('sidebarOverlay').classList.remove('active'); document.getElementById('historyToggleBtn').classList.remove('active'); }
+    function addNewSession() {
+        // Reset UI for a fresh analysis — clear image, metrics, logs
+        const clearBtn = document.getElementById('uploadClearBtn');
+        if (clearBtn && clearBtn.classList.contains('visible')) clearBtn.click();
+        else {
+            resetAllMetrics();
+            const container = document.getElementById('logsContainer');
+            if (container) container.innerHTML = '<div class="text-dim">&gt; awaiting input</div>';
+        }
+        closeSidebar();
+    }
+
+    function saveAnalysisToHistory(filename, result) {
+        const sessions = loadSessions();
+        const now = new Date();
+        const timeStr = now.getHours().toString().padStart(2,'0') + ':' + now.getMinutes().toString().padStart(2,'0');
+        
+        // Determine date label
+        const today = new Date();
+        const yesterday = new Date(today);
+        yesterday.setDate(yesterday.getDate() - 1);
+        
+        let dateLabel = 'Today';
+        const analysisDate = new Date(now);
+        if (analysisDate.toDateString() === yesterday.toDateString()) {
+            dateLabel = 'Yesterday';
+        } else if (analysisDate.toDateString() !== today.toDateString()) {
+            dateLabel = analysisDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+        }
+        
+        // Determine risk level based on calories
+        const kcal = Math.round(result.nutrition?.calories || result.macros?.calories || 0);
+        let risk = 'low';
+        if (kcal > 800) risk = 'high';
+        else if (kcal > 500) risk = 'med';
+        
+        const dishName = result.matched_dish || result.dish_text || filename;
+        const newSession = {
+            id: 's' + Date.now(),
+            title: `${filename} — ${dishName}`,
+            time: timeStr,
+            date: dateLabel,
+            kcal: kcal,
+            risk: risk,
+            confidence: result.confidence || 0,
+            active: true,
+            result: result // Store full result for later retrieval
+        };
+        
+        sessions.forEach(s => s.active = false);
+        sessions.unshift(newSession);
+        
+        // Keep only last 50 sessions
+        if (sessions.length > 50) {
+            sessions.splice(50);
+        }
+        
+        saveSessions(sessions);
+        renderSessions();
+    }
+
+    document.getElementById('historyToggleBtn').addEventListener('click', () => { const s = document.getElementById('historySidebar'); if (s.classList.contains('open')) closeSidebar(); else openSidebar(); });
+    document.getElementById('sidebarClose').addEventListener('click', closeSidebar);
+    document.getElementById('sidebarOverlay').addEventListener('click', closeSidebar);
+    document.getElementById('newSessionBtn').addEventListener('click', addNewSession);
+    document.getElementById('railNewSessionBtn').addEventListener('click', addNewSession);
+    document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeSidebar(); });
+    renderSessions();
+
+    (function setupUpload() {
+        const uploadArea  = document.getElementById('uploadArea');
+        const fileInput   = document.getElementById('imageFileInput');
+        const uploadBtn   = document.getElementById('uploadBtn');
+        const clearBtn    = document.getElementById('uploadClearBtn');
+        const uploadedImg = document.getElementById('uploadedImage');
+        const analyzeBtn  = document.getElementById('analyzeBtn');
+        let currentObjectURL = null;
+        let currentRequestId = 0;
+
+        function loadFile(file) {
+            if (!file || !file.type.startsWith('image/')) return;
+            if (currentObjectURL) URL.revokeObjectURL(currentObjectURL);
+            const requestId = ++currentRequestId;
+            selectedUploadFile = file;
+            selectedUploadDataUrl = '';
+            currentObjectURL = URL.createObjectURL(file);
+            uploadedImg.src = currentObjectURL;
+            uploadedImg.style.display = 'block';
+            uploadArea.classList.add('has-image');
+            clearBtn.classList.add('visible');
+            if (requestId === currentRequestId) updateAnalyzeButtonState();
+        }
+
+        function clearImage() {
+            if (currentObjectURL) { URL.revokeObjectURL(currentObjectURL); currentObjectURL = null; }
+            currentRequestId++;
+            selectedUploadFile = null;
+            selectedUploadDataUrl = '';
+            uploadedImg.src = ''; uploadedImg.style.display = 'none';
+            uploadArea.classList.remove('has-image'); clearBtn.classList.remove('visible');
+            fileInput.value = '';
+            resetAllMetrics();
+            graphEngine.settleVisualization();
+            graphEngine._setLogsStatus('idle', 'IDLE');
+            graphEngine.setProcessing(0, 'IDLE');
+            const container = document.getElementById('logsContainer');
+            container.innerHTML = '<div class="text-dim">&gt; awaiting input</div>';
+            analysisRunning = false;
+            updateAnalyzeButtonState();
+        }
+
+        uploadBtn.addEventListener('click', e => {
+            e.stopPropagation();
+            fileInput.click();
+        });
+        uploadArea.addEventListener('click', e => {
+            if (e.target !== uploadArea) return;
+            if (!uploadArea.classList.contains('has-image')) fileInput.click();
+        });
+        fileInput.addEventListener('change', e => { if (e.target.files[0]) loadFile(e.target.files[0]); });
+        if (analyzeBtn) analyzeBtn.addEventListener('click', runSelectedImageAnalysis);
+        clearBtn.addEventListener('click', e => {
+            e.stopPropagation();
+            clearImage();
+        });
+        uploadArea.addEventListener('dragover', e => { e.preventDefault(); uploadArea.classList.add('drag-over'); });
+        uploadArea.addEventListener('dragleave', () => uploadArea.classList.remove('drag-over'));
+        uploadArea.addEventListener('drop', e => { e.preventDefault(); uploadArea.classList.remove('drag-over'); const file = e.dataTransfer.files[0]; if (file) loadFile(file); });
+    })();
+
+    // Command console handler
+    (function setupCommandConsole() {
+        const commandInput = document.getElementById('commandInput');
+        if (!commandInput) return;
+        commandInput.addEventListener('keydown', (e) => {
+            if (e.key !== 'Enter') return;
+            const cmd = commandInput.value.trim();
+            commandInput.value = '';
+            if (!cmd) return;
+            addConsoleOutput(`> ${cmd}`);
+            const cmdLower = cmd.toLowerCase();
+            if (cmdLower === '/light') {
+                uiController.applyTheme('light');
+                addConsoleOutput('✓ theme: light');
+            } else if (cmdLower === '/dark') {
+                uiController.applyTheme('dark');
+                addConsoleOutput('✓ theme: dark');
+            } else if (cmdLower === '/help') {
+                addConsoleOutput('Available commands:');
+                addConsoleOutput('  /light - switch to light theme');
+                addConsoleOutput('  /dark - switch to dark theme');
+                addConsoleOutput('  /help - show this help');
+            } else {
+                addConsoleOutput(`✗ unknown command: ${cmd}`);
+                addConsoleOutput('  type /help for available commands');
+            }
+        });
+    })();
+
+    window.FoodAnalysisApp = {
+        api, dataManager, animationEngine, uiController, graphEngine,
+        connectGraph(backendUrl, intervalMs) { graphEngine.connect(backendUrl, intervalMs); },
+        disconnectGraph() { graphEngine.disconnect(); },
+        pushGraphBars(bars) { graphEngine.pushBars(bars); },
+        setTheme(mode) { uiController.applyTheme(mode); }
+    };
+</script>
+</body>
+</html>

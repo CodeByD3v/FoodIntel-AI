@@ -1,0 +1,8 @@
+pandas
+rapidfuzz
+tqdm
+torch
+torchvision
+transformers
+pillow
+huggingface_hub

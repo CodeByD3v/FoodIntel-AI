@@ -1,0 +1,1 @@
+"""Utilities for the local food classification model cache."""
